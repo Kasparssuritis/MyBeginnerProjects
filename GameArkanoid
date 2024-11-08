@@ -1,0 +1,278 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <locale.h>
+#include <windows.h>
+#include <winuser.h>
+#include <time.h>
+#include <math.h>
+
+#define width 70
+#define height 20
+#define M_PI 3.14159265358979
+
+
+
+char gameField[height][width];
+
+
+
+typedef struct {
+    int x, y, w;
+} TRacket;
+
+typedef struct {
+    float x, y;
+    float speed, alfa;
+    int ix, iy;
+} TBall;
+
+typedef struct{
+    char w;
+} TBrick;
+
+
+
+TRacket racket;
+TBall ball;
+TBrick brick;
+
+
+
+void initRacket(){
+    racket.w = 7;
+    racket.x = (width - racket.w) / 2;
+    racket.y = height - 1;
+}
+
+void initBrick(){
+    brick.w = '=';
+}
+
+void moveBall(float x, float y){
+    ball.x = x;
+    ball.y = y;
+    ball.ix = (int)round(ball.x);
+    ball.iy = (int)round(ball.y);
+
+}
+
+void autoMoveBall(){
+
+    if(gameField[ball.iy][ball.ix] == '='){
+        gameField[ball.iy][ball.ix] = ' ';
+    }
+    if(ball.alfa < 0){
+        ball.alfa += M_PI * 2;
+    }
+
+    if(ball.alfa > M_PI * 2){
+        ball.alfa = M_PI * 2;
+    }
+
+    TBall bl = ball;
+    moveBall(ball.x + cos(ball.alfa) * ball.speed, ball.y + sin(ball.alfa) * ball.speed);
+
+    if(gameField[ball.iy][ball.ix] == '#' || gameField[ball.iy][ball.ix] == '_'){
+            if(ball.ix != bl.ix && ball.iy != bl.y){
+                    if(gameField[bl.iy][ball.ix] == gameField[ball.iy][bl.ix]){
+                        bl.alfa = bl.alfa + M_PI;
+
+                    }
+                    else{
+                        if(gameField[bl.iy][ball.ix] == '#'){
+                            ball.alfa = (2*M_PI - bl.alfa) - M_PI;
+
+                        }
+                        else{
+                            ball.alfa = (2 * M_PI - bl.alfa);
+
+                        }
+                    }
+            }
+            else if(ball.iy == bl.y){
+                ball.alfa = (2 * M_PI - bl.alfa) + M_PI;
+
+            }
+
+            else{
+                ball.alfa = (2 * M_PI - bl.alfa);
+
+            }
+    }
+
+}
+
+void initBall(){
+    moveBall(2, 2);
+    ball.alfa = -1;
+    ball.speed = 1;
+}
+
+ void drawBall(){
+     gameField[(ball.iy)][ball.ix] = 'O';
+ }
+
+void drawRacket(){
+    for(int i = racket.x; i < racket.x + racket.w; i++){
+            gameField[racket.y][i] = '_';
+    }
+}
+
+void initGameField(int lvl){
+
+    for(int i = 0; i < height; i++){
+        for(int j = 0; j < width; j++){
+            if(lvl == 1){
+                if(i == 0 || j == 0 || j == 69){
+                gameField[i][j] = '#';
+                }
+                else if (i == 10 && j >= 20 && j <= 49){
+                    gameField[i][j] = '#';
+                }
+                else{
+                    gameField[i][j] = ' ';
+                }
+            }
+            else if(lvl == 2){
+                if(i == 0 || j == 0 || j == 69){
+                gameField[i][j] = '#';
+                }
+                else if (i == 10 && j >= 12 && j <= 29 || i == 10 && j >= 41 && j <= 57){
+                    gameField[i][j] = '#';
+                }
+                else{
+                    gameField[i][j] = ' ';
+                }
+            }
+            else if(lvl == 3){
+                if(i == 0 || j == 0 || j == 69){
+                gameField[i][j] = '#';
+
+                }
+                else if (i == 8 && j >= 12 && j <= 29 || i == 13 && j >= 27 && j <= 43 || i == 8 && j >= 41 && j <= 57){
+                    gameField[i][j] = '#';
+                }
+                else{
+                    gameField[i][j] = ' ';
+
+                }
+            }
+            else{
+                printf("Something went wrong, try again!");
+            }
+        }
+    }
+}
+
+void drawGameField(){
+    for(int i = 0; i < height; i++){
+        for(int j = 0; j < width; j++){
+            printf("%c", gameField[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+
+void moveRacket(int x){
+    racket.x = x;
+    if(racket.x < 1){
+        racket.x = 1;
+    }
+    if(racket.x + racket.w >= width){
+        racket.x = width - 1 - racket.w;
+    }
+}
+
+int menu(int lvl){
+
+    char pressedButton;
+    printf("\n");
+    printf(" PRESS ANY BUTTON TO START THE GAME ");
+    printf("\n");
+    pressedButton = getch();
+    system("cl");
+
+    printf("\n");
+    printf("\n");
+    printf(" CHOOSE GAME LEVEL YOURSELF OR START FROM BEGINING");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf("\n");
+    printf(" ENTER 1 TO START FROM BEGINING");
+    printf("\n");
+    printf("\n");
+    printf(" ENTER 2 TO START FROM SECOND LEVEL");
+    printf("\n");
+    printf("\n");
+    printf(" ENTER 3 TO START FROM THIRD LEVEL");
+    printf("\n");
+    printf("\n");
+    scanf("%d", lvl);
+
+    return lvl;
+}
+
+void setCursor(int x, int y){
+    COORD cord;
+    cord.X = x;
+    cord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cord);
+}
+
+void hideCursor(){
+HANDLE  handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO structCursorInfo;
+	GetConsoleCursorInfo(handle, &structCursorInfo);
+	structCursorInfo.bVisible = FALSE;
+	SetConsoleCursorInfo(handle, &structCursorInfo);
+}
+
+int main()
+{
+    int lvl = 0;
+    menu(&lvl);
+
+    if(lvl == 1 || lvl == 2 || lvl == 3){
+
+        BOOL run = FALSE;
+        initRacket();
+        initBall();
+        initBrick();
+
+        do{
+            setCursor(0, 0);
+            hideCursor();
+
+            if(run){
+                autoMoveBall();
+            }
+            if(ball.iy > height){
+                run = FALSE;
+                moveBall(racket.x + racket.w / 2, racket.y - 1);
+            }
+            if(GetKeyState('W') < 0){
+                run = TRUE;
+            }
+            if(!run){
+                moveBall(racket.x + racket.w / 2, racket.y - 1);
+            }
+            initGameField(lvl);
+            drawRacket();
+            drawBall();
+            drawGameField();
+            if(GetKeyState('A') < 0){
+                moveRacket(racket.x - 4);
+            }
+            if(GetKeyState('D') < 0){
+                moveRacket(racket.x + 4);
+            }
+        } while(GetKeyState(VK_ESCAPE) >= 0);
+    }
+    else {
+        printf("Bye bye!");
+    }
+
+}
