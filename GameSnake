@@ -1,0 +1,253 @@
+//including all necessary libraries
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <locale.h>
+#include <windows.h>
+#include <winuser.h>
+#include <ctime>
+#include <cmath>
+
+
+//using name space "std"
+using namespace std;
+
+//the boolean which will say if the game ends, so if game ends it is game over for player
+bool gameOver;
+
+//our game's map sizes
+const int width = 20;
+const int height = 20;
+
+//coordinates of snakes head, fruits, also score value which is obviously zero at the start of the game
+int x, y, fruitX, fruitY, score = 0;
+
+
+int tailX[391], tailY[361], tailLen = 0;
+
+//setting directions
+enum eDirection {STOP = 0, LEFT, RIGHT, UP, DOWN};
+eDirection direction;
+
+//the setup function
+void Setup() {
+	gameOver = false; //setting gameOver argument to false, so the game is not over at the start
+	direction = STOP; //direction by default is stop
+
+	//setting start position for snakes head
+	x = width / 2;
+	y = height / 2;
+
+	//setting start position for first fruit
+	fruitX = 1 + (rand() % (width - 2));
+	fruitY = 1 + (rand() % (height - 1));
+}
+
+//these two functions are from network, they remove all glitches and tickers from console
+void setCursor(int x, int y) {
+	COORD cord;
+	cord.X = x;
+	cord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cord);
+}
+
+void hideCursor() {
+	HANDLE  handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO structCursorInfo;
+	GetConsoleCursorInfo(handle, &structCursorInfo);
+	structCursorInfo.bVisible = FALSE;
+	SetConsoleCursorInfo(handle, &structCursorInfo);
+}
+
+//the drawing function which will draw our map, snake and fruits
+void Draw() {
+
+	//cleaning console with purpose to make an effect of changing frames
+	setCursor(0, 0);
+	hideCursor();
+
+	cout << "Press any of movement buttons to start!(W, A, S, D)" << endl; //"welcome" guide text
+	cout << "Your score is - " << score << endl; //printing out player's score
+
+	//map drawing
+	for (int i = 0; i < width; i++) {
+
+		cout << "#"; //drawing the top border
+	}
+
+	cout << endl; //moving the string for correct drawing of field
+
+	//drawing the field
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			//drawing the left border
+			if (j == 0) {
+				cout << "#";
+			}
+			//drawing the right border
+			else if(j == width - 1) {
+				cout << "#";
+			}
+			//drawing the snakes head
+			else if (i == y && j == x) {
+				cout << "O";
+			}
+			//drawing the fruit
+			else if (i == fruitY && j == fruitX) {
+				cout << "F";
+			}
+			else {
+				bool print = false; //boolean to check if we should print tail's part
+				for (int k = 0; k < tailLen; k++) {
+					if (tailX[k] == j && tailY[k] == i) { //if we should print tail's part, we just print it and set boolean to true
+						cout << "o";
+						print = true;
+					}
+				}
+				if (!print){ //if we should not print tail's part, we print space
+					cout << " ";
+				}
+			}
+
+		}
+
+		cout << endl; //moving the string for correct drawing of field
+	}
+	for (int i = 0; i < width; i++) {
+
+		cout << "#"; //drawing the bottom border
+	}
+
+	cout << endl;
+}
+
+//the function that will handle all input
+void Input() {
+	if (_kbhit()) { // _kbhit() function checks the console for a recent keystroke, if the function returns a nonzero value, a keystroke is waiting
+		switch (_getch()) { // _getch() immediately returns the pressed key, so we can work with that
+
+		//setting controls for game, for example, if has been pressed button "s" the argument "direction" becomes equal to "DOWN"
+		//Also setting the rule that due to snake-game rules player can't imidiatly change direction to the opposite
+		case 'a':
+			if (direction != RIGHT) {
+				direction = LEFT;
+			}
+			break;
+		case 'd':
+			if (direction != LEFT) {
+				direction = RIGHT;
+			}
+			break;
+		case 'w':
+			if (direction != DOWN) {
+				direction = UP;
+			}
+			break;
+		case 's':
+			if (direction != UP) {
+				direction = DOWN;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+//this function does all the work connected with game mechanics, for example, if direction is "LEFT" x coordinate is decreasing that makes "snake" move left
+//p.s picture the coordinate axis and you will get what I am saying
+void Logic() {
+	//here we declarate integers which will be the first element's coordinates
+	int prevX = tailX[0];
+	int prevY = tailY[0];
+
+	//the second pair of integers which are necessary for calculating tail's coordinates
+	int prev2X, prev2Y;
+
+	//setting tail's first element's coordinates as head's coordinates
+	tailX[0] = x;
+	tailY[0] = y;
+
+	for (int i = 1; i < tailLen; i++) {
+		//implementing the rule that, if snake hits own tail, player loses
+		if (tailX[i] == x && tailY[i] == y) {
+			gameOver = true;
+		}
+
+		//here we set prev2 integers as actual element's coordinates
+		prev2X = tailX[i];
+		prev2Y = tailY[i];
+
+		//then we set head's coordinate's for this element
+		tailX[i] = prevX;
+		tailY[i] = prevY;
+
+		//respawning the fruit if it was spawned right on snake's tail
+		if (tailX[i] == fruitX && tailY[i] == fruitY){
+			fruitX = 1 + (rand() % (width - 2));
+			fruitY = 1 + (rand() % (height - 1));
+		}
+
+		//finally we renew information about coordinates
+		prevX = prev2X;
+		prevY = prev2Y;
+
+		//and we are repeating whole process for each tail's element
+	}
+	switch (direction) {
+	case LEFT:
+		--x;
+		break;
+	case RIGHT:
+		++x;
+		break;
+	case UP:
+		--y;
+		break;
+	case DOWN:
+		++y;
+		break;
+	default:
+		break;
+	}
+}
+
+//and finally, here is our game, the main function
+int main() {
+	setlocale(LC_ALL, "eng"); //not worth describing
+
+	//function srand() from "cmath" librery with function "time" from librery "ctime" as an argument for correct function's "rand" return
+	//all this guarantee the correct work of function "rand" which generates random number
+	srand(time(NULL));
+
+	Setup(); //calling our setup function
+	while (gameOver == false) { //cycle "while" works for us as game engine until the game is over
+
+		//calling our functions
+		Draw();
+		Input();
+		Logic();
+		Sleep(50);//this function is from "windows" librery it helps make game become more playable
+
+		//right here we set the rule that, if snake runs into the wall the game is over
+		if (x < 1 || x > 18 || y < 0 || y > 19) {
+			gameOver = true;
+		}
+
+		//and right here we implement the snake's ability to eat fruits
+		if (x == fruitX && y == fruitY) {
+			score++; //adding points as frit is eaten
+
+			//putting new fruit on the field
+			fruitX = 1 + (rand() % (width - 2));
+			fruitY = 1 + (rand() % (height - 1));
+
+			//increasing tail's length
+			tailLen++;
+		}
+	}
+
+	system("pause");
+	return 0;
+}
